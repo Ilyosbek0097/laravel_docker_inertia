@@ -32,7 +32,11 @@ Route::group(['middleware' => ['role:Admin|Superadmin|User|Superuser|Meneger|']]
 
 });
 
-
+Route::get('/errors/forbidden', function (){
+    return Inertia::render('Errors/Forbidden', [
+        'message' => __('Forbidden'),
+    ]);
+})->name('errors.forbidden');
 Route::get('/dashboard', function () {
     return Inertia::render('Dashboard');
 })->middleware(['auth', 'verified'])->name('dashboard');

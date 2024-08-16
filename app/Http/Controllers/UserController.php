@@ -7,6 +7,8 @@ use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Inertia\Inertia;
+use Spatie\Permission\Models\Role;
+
 //use Inertia\Middleware;
 //use Spatie\Permission\Middleware\PermissionMiddleware;
 //use Spatie\Permission\Models\Role;

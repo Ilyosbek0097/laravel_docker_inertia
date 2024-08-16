@@ -2,28 +2,31 @@
 
 namespace App\Http\Controllers;
 
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
-use Inertia\Middleware;
-use Spatie\Permission\Middleware\PermissionMiddleware;
+//use Inertia\Middleware;
+//use Spatie\Permission\Middleware\PermissionMiddleware;
 use Spatie\Permission\Models\Permission;
 
 class PermissionController extends Controller
 {
-    public static function middleware(): array
-    {
-        return [
-            new Middleware(PermissionMiddleware::using('Permission Create'), only: ['create', 'store']),
-            new Middleware(PermissionMiddleware::using('Permission Show'), only: ['show', 'index']),
-            new Middleware(PermissionMiddleware::using('Permission Edit'), only: ['edit', 'update']),
-            new Middleware(PermissionMiddleware::using('Permission Delete'), only: ['delete']),
-        ];
-    }
+    use AuthorizesRequests;
+//    public static function middleware(): array
+//    {
+//        return [
+//            new Middleware(PermissionMiddleware::using('Permission Create'), only: ['create', 'store']),
+//            new Middleware(PermissionMiddleware::using('Permission Show'), only: ['show', 'index']),
+//            new Middleware(PermissionMiddleware::using('Permission Edit'), only: ['edit', 'update']),
+//            new Middleware(PermissionMiddleware::using('Permission Delete'), only: ['delete']),
+//        ];
+//    }
     /**
      * Display a listing of the resource.
      */
     public function index()
     {
+        $this->authorize('view', new Permission());
         return inertia('Permission/Index', [
             'permissions' => Permission::orderBy('id', 'desc')->get()
         ]);
@@ -34,6 +37,7 @@ class PermissionController extends Controller
      */
     public function create()
     {
+        $this->authorize('create', new Permission());
         return inertia('Permission/Create');
     }
 
@@ -42,6 +46,7 @@ class PermissionController extends Controller
      */
     public function store(Request $request)
     {
+        $this->authorize('create', new Permission());
         $request->validate([
             'name' => 'required|unique:permissions,name|max:255',
         ]);
@@ -56,6 +61,7 @@ class PermissionController extends Controller
      */
     public function show(Permission $permission)
     {
+        $this->authorize('view', $permission);
         return inertia('Permission/Show', [
             'permission' => $permission
         ]);
@@ -66,6 +72,7 @@ class PermissionController extends Controller
      */
     public function edit(Permission $permission)
     {
+        $this->authorize('update', $permission);
         return inertia('Permission/Edit', [
             'permission' => $permission
         ]);
@@ -77,7 +84,7 @@ class PermissionController extends Controller
      */
     public function update(Request $request, Permission $permission)
     {
-
+        $this->authorize('update', $permission);
         $request->validate([
             'name' => 'required|max:255|unique:permissions,name,'.$permission->id,
         ]);
@@ -93,6 +100,7 @@ class PermissionController extends Controller
      */
     public function destroy(Permission $permission)
     {
+        $this->authorize('delete', $permission);
         $permission->delete();
         return to_route('permission.index')->with('success', 'Permission deleted successfully.');
     }

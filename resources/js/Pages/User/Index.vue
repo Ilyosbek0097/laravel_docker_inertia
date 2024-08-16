@@ -1,77 +1,64 @@
 <script>
-import MyLayout from "@/Layouts/MyLayout.vue";
-import { defineComponent, h, ref } from 'vue';
-import { darkTheme, NIcon } from 'naive-ui';
+import { defineComponent, ref, onMounted } from 'vue';
+import { useUserStore } from '@/Stores/userStore.js';
+import { usePage } from '@inertiajs/vue3';
+import { router } from '@inertiajs/vue3';
+import {darkTheme, useMessage} from 'naive-ui';
+import MyLayout from '@/Layouts/MyLayout.vue';
 import { AddCircleSharp as Add } from '@vicons/ionicons5';
-import { router } from "@inertiajs/vue3";
-import { usePage } from "@inertiajs/vue3";
-import { useMessage } from "naive-ui";
-
 
 export default defineComponent({
-    props: {
-        users: Object,
-        userRoles: Object,
-        flash: Object,
-        permissions: Object,
-    },
-
     components: {
         MyLayout,
-        Add,
+        Add
     },
-    setup(props) {
-        // const { hasPermission } = usePermissions();
+    setup() {
+        const store = useUserStore();
+        const pageProps = usePage().props;
         const message = useMessage();
         const showModalRef = ref(false);
         const selectedUserId = ref(null);
 
-
-
-        const pageProps = usePage().props;
-        const permissions = ref(pageProps.user ? pageProps.user.permissions : []);
-        const hasPermission = (permission) => {
-            return permissions.value.includes(permission);
-        };
-
-
-
-
-        const { flash } = usePage().props;
+        onMounted(() => {
+            store.setUsers(pageProps.users || []);
+            store.setFlash(pageProps.flash || []);
+            store.setPermissions(pageProps.user ? pageProps.user.permissions : []);
+        });
 
         const CreateUser = () => {
             router.get(route('user.create'));
         };
 
         const ShowUser = (id) => {
-            router.get(route('user.show', { user: id }));
+            router.get(route('user.show', {user: id}));
         };
 
         const EditUser = (id) => {
             try {
-                router.get(route('user.edit', { user: id }));
-            } catch (e){
-                console.log(error)
+                router.get(route('user.edit', {user: id}));
+            } catch (e) {
+                console.log(e);
             }
-
-
         };
 
         const DeleteUser = () => {
             try {
-                // HTTP so'rov yuborish
-                 router.delete(route('user.destroy', { user: selectedUserId.value }));
-                // message.success('User deleted successfully.');
+                router.delete(route('user.destroy', {user: selectedUserId.value}));
                 showModalRef.value = false;
+                message.success('User deleted successfully.');
             } catch (error) {
-                // message.error('Failed to delete user.');
-                console.log(error)
+                message.error('Failed to delete user.');
+                console.log(error);
             }
         };
 
         const openDeleteModal = (id) => {
-            selectedUserId.value = id; // O'chirilishi kerak bo'lgan foydalanuvchini saqlash
+            selectedUserId.value = id;
             showModalRef.value = true;
+        };
+
+        const hasPermission = (permission) => {
+            return store.hasPermission(permission);
         };
 
         return {
@@ -83,13 +70,12 @@ export default defineComponent({
             EditUser,
             DeleteUser,
             openDeleteModal,
-            permissions,
             hasPermission,
-            flash,
             message,
+            store,
             showModal: showModalRef,
             onPositiveClick() {
-                DeleteUser();  // Tasdiqlash tugmasi bosilganda foydalanuvchini o'chirish
+                DeleteUser();
             },
             onNegativeClick() {
                 showModalRef.value = false;
@@ -103,23 +89,24 @@ export default defineComponent({
     <MyLayout>
         <n-layout-content content-style="padding: 30px; height:700px;">
             <n-space justify="end" class="mb-4">
-                <n-button  :disabled="!hasPermission('User Create')" type="primary" size="large" @click="CreateUser">
-                    <n-icon size="30"><Add /></n-icon> Add User
+                <n-button :disabled="!hasPermission('User Create')" type="primary" size="large" @click="CreateUser">
+                    <n-icon size="30">
+                        <Add/>
+                    </n-icon>
+                    Add User
                 </n-button>
             </n-space>
             <n-space vertical :size="12">
-                <!-- Xabarni ko'rsatish -->
                 <n-alert
-                    v-if="flash.success"
+                    v-if="store.flash.success"
                     type="success"
                     show-icon
                     closable
                     style="margin-bottom: 16px"
                 >
-                    {{ flash.success }}
+                    {{ store.flash.success }}
                 </n-alert>
             </n-space>
-<!--            {{ $page.props }}-->
             <n-table :bordered="false" :single-line="false">
                 <thead>
                 <tr>
@@ -131,26 +118,30 @@ export default defineComponent({
                 </tr>
                 </thead>
                 <tbody>
-<!--                    <pre>-->
-<!--                        {{ JSON.stringify($page.props.permissions, null, 2)}}-->
-<!--                    </pre>-->
-                    <tr v-for="user in users" :key="user.id">
-                        <td>{{ user.id }}</td>
-                        <td>{{ user.name }}</td>
-                        <td>{{ user.email }}</td>
-                        <td>
-                            <n-space>
-                                <n-badge  type="info"  v-if="user.roles.length > 0" v-for="role in user.roles" :key="role" :value="role" :max="15" />
-                            </n-space>
-                        </td>
-                        <td>
-                            <n-space>
-                                <n-button :disabled="!hasPermission('User Show')" type="info" class="mr-2" @click="ShowUser(user.id)">Show</n-button>
-                                <n-button :disabled="!hasPermission('User Edit')" type="primary" class="mr-2" @click="EditUser(user.id)">Edit</n-button>
-                                <n-button :disabled="!hasPermission('User Delete')" type="error" @click="openDeleteModal(user.id)">Delete</n-button>
-                            </n-space>
-                        </td>
-                    </tr>
+                <tr v-for="user in store.users" :key="user.id">
+                    <td>{{ user.id }}</td>
+                    <td>{{ user.name }}</td>
+                    <td>{{ user.email }}</td>
+                    <td>
+                        <n-space>
+                            <n-badge type="info" v-if="user.roles.length > 0" v-for="role in user.roles" :key="role"
+                                     :value="role" :max="15"/>
+                        </n-space>
+                    </td>
+                    <td>
+                        <n-space>
+                            <n-button :disabled="!hasPermission('User Show')" type="info" class="mr-2"
+                                      @click="ShowUser(user.id)">Show
+                            </n-button>
+                            <n-button :disabled="!hasPermission('User Edit')" type="primary" class="mr-2"
+                                      @click="EditUser(user.id)">Edit
+                            </n-button>
+                            <n-button :disabled="!hasPermission('User Delete')" type="error"
+                                      @click="openDeleteModal(user.id)">Delete
+                            </n-button>
+                        </n-space>
+                    </td>
+                </tr>
                 </tbody>
             </n-table>
 

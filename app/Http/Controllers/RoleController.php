@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
@@ -12,20 +13,22 @@ use Spatie\Permission\Models\Role;
 
 class RoleController extends Controller
 {
-    public static function middleware(): array
-    {
-        return [
-            new Middleware(PermissionMiddleware::using('Role Create'), only: ['create', 'store']),
-            new Middleware(PermissionMiddleware::using('Role Show'), only: ['show', 'index']),
-            new Middleware(PermissionMiddleware::using('Role Edit'), only: ['edit', 'update']),
-            new Middleware(PermissionMiddleware::using('Role Delete'), only: ['delete']),
-        ];
-    }
+    use AuthorizesRequests;
+//    public static function middleware(): array
+//    {
+//        return [
+//            new Middleware(PermissionMiddleware::using('Role Create'), only: ['create', 'store']),
+//            new Middleware(PermissionMiddleware::using('Role Show'), only: ['show', 'index']),
+//            new Middleware(PermissionMiddleware::using('Role Edit'), only: ['edit', 'update']),
+//            new Middleware(PermissionMiddleware::using('Role Delete'), only: ['delete']),
+//        ];
+//    }
     /**
      * Display a listing of the resource.
      */
     public function index()
     {
+        $this->authorize('view', new Role());
         $roles = Role::with('permissions')->get(); // Rollarni va ularning ruxsatlarini olish
 
         return inertia('Roles/Index', [
@@ -38,6 +41,7 @@ class RoleController extends Controller
      */
     public function create()
     {
+        $this->authorize('create', new Role());
         return inertia('Roles/Create');
     }
 
@@ -46,6 +50,7 @@ class RoleController extends Controller
      */
     public function store(Request $request)
     {
+        $this->authorize('create', new Role());
        $request->validate([
            'name' => 'required|max:100|unique:roles,name',
        ]);
@@ -62,6 +67,8 @@ class RoleController extends Controller
      */
     public function show(Role $role)
     {
+        $this->authorize('view', $role);
+
         return inertia('Roles/Show', [
             'role' => $role,
         ]);
@@ -72,6 +79,7 @@ class RoleController extends Controller
      */
     public function edit(Role $role)
     {
+        $this->authorize('update', $role);
         return inertia('Roles/Edit', [
             'role' => $role,
         ]);
@@ -83,6 +91,7 @@ class RoleController extends Controller
      */
     public function update(Request $request, Role $role)
     {
+        $this->authorize('update', $role);
         $request->validate([
             'name' => 'required|max:100|unique:roles,name,'.$role->id,
         ]);
@@ -97,12 +106,14 @@ class RoleController extends Controller
      */
     public function destroy(Role $role)
     {
+        $this->authorize('delete', $role);
         $role->delete();
         return to_route('role.index')->with('success', 'Role deleted successfully.');
     }
 
     public function permission(Role $role)
     {
+        $this->authorize('addPermission', $role);
         $permissions = Permission::all();
         $rolePermissions = DB::table('role_has_permissions')
             ->where('role_id', $role->id)
@@ -118,6 +129,7 @@ class RoleController extends Controller
 
     public function addPermission(Request $request, Role $role)
     {
+        $this->authorize('addPermission', new Role());
         $request->validate([
             'permissionValue' => 'required|array',
         ]);

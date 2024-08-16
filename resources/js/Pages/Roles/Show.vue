@@ -1,12 +1,12 @@
 <script>
-import {router} from "@inertiajs/vue3";
+import {router, usePage} from "@inertiajs/vue3";
 import {ArrowUndoCircleSharp as BackIcon} from '@vicons/ionicons5'
 import MyLayout from "@/Layouts/MyLayout.vue";
-import {defineComponent} from "vue";
+import {defineComponent, ref} from "vue";
 
 export default defineComponent({
     props: {
-      role: Object,
+      role: Array,
     },
     components: {
         MyLayout,
@@ -53,6 +53,12 @@ export default defineComponent({
                 <tr v-if="role">
                     <th>Guarded</th>
                     <td>{{ role.guard_name }}</td>
+                </tr>
+                <tr>
+                    <th>Permissions</th>
+                    <td>
+                        {{ permissions }}
+                    </td>
                 </tr>
                 </tbody>
             </n-table>
